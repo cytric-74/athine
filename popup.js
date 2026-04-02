@@ -1,136 +1,105 @@
-const SEGMENTS = 28;
+const STEP = 0.05; // 5% per +/- click
 
-// State
 const tabVolumes = {};
 const tabMuted = {};
 let allTabs = [];
 let currentTabId = null;
 
-// Helpers
+// helpers
 
 function domainTag(url) {
-  try {
-    const h = new URL(url).hostname.replace(/^www\./, "");
-    return h.split(".")[0];
-  } catch { return "tab"; }
+  try { return new URL(url).hostname.replace(/^www\./, "").split(".")[0]; }
+  catch { return "tab"; }
 }
 
-function formatVol(v) {
-  return Math.round(v * 100);
-}
-
-function getEffectiveVolume(tabId) {
-  return tabMuted[tabId] ? 0 : (tabVolumes[tabId] ?? 1.0);
-}
-
-// Send volume to background
+function fmt(v) { return Math.round(v * 100) + "%"; }
 
 function sendVolume(tabId, volume) {
   browser.runtime.sendMessage({ type: "SET_VOLUME", tabId, volume }).catch(() => {});
 }
 
-// Build a segmented bar
+// Per-tab DOM updates 
 
-function buildBar(tabId, container) {
+function setBarWidth(tabId, volume) {
+  const fill = document.querySelector(`[data-bar-fill="${tabId}"]`);
+  if (fill) fill.style.width = (volume * 100) + "%";
+}
+
+function setVolLabel(tabId, volume) {
+  const el = document.querySelector(`[data-vol-label="${tabId}"]`);
+  if (el) el.textContent = fmt(volume);
+}
+
+function applyVolumeUI(tabId) {
+  const muted = tabMuted[tabId];
+  const vol = tabVolumes[tabId] ?? 1.0;
+  const display = muted ? 0 : vol;
+
+  setBarWidth(tabId, display);
+  setVolLabel(tabId, muted ? 0 : vol);
+
+  const card = document.querySelector(`[data-tab-card="${tabId}"]`);
+  if (card) card.classList.toggle("is-muted", !!muted);
+
+  const muteBtn = document.querySelector(`[data-mute-btn="${tabId}"]`);
+  if (muteBtn) {
+    muteBtn.classList.toggle("is-muted", !!muted);
+    muteBtn.textContent = muted ? "🔇" : "🔊";
+  }
+}
+
+// Adjust volume by delta 
+
+function adjustVolume(tabId, delta) {
+  const current = tabVolumes[tabId] ?? 1.0;
+  const next = Math.max(0, Math.min(1, current + delta));
+  tabVolumes[tabId] = next;
+  if (tabMuted[tabId] && next > 0) tabMuted[tabId] = false;
+  applyVolumeUI(tabId);
+  sendVolume(tabId, next);
+}
+
+// Build smooth progress bar 
+
+function buildBar(tabId) {
   const track = document.createElement("div");
   track.className = "bar-track";
 
-  const barsDiv = document.createElement("div");
-  barsDiv.className = "bar-segments";
-
-  const segs = [];
-  for (let i = 0; i < SEGMENTS; i++) {
-    const s = document.createElement("div");
-    s.className = "seg";
-    barsDiv.appendChild(s);
-    segs.push(s);
-  }
-  track.appendChild(barsDiv);
-
-  function paintBar(volume) {
-    const filled = Math.round(volume * SEGMENTS);
-    segs.forEach((s, i) => {
-      s.className = "seg";
-      if (i < filled) {
-        s.classList.add(i === filled - 1 ? "peak" : "filled");
-      }
-    });
-  }
+  const fill = document.createElement("div");
+  fill.className = "bar-fill";
+  fill.dataset.barFill = tabId;
+  fill.style.width = ((tabVolumes[tabId] ?? 1.0) * 100) + "%";
+  track.appendChild(fill);
 
   function volumeFromX(clientX) {
     const rect = track.getBoundingClientRect();
-    const raw = (clientX - rect.left) / rect.width;
-    return Math.max(0, Math.min(1, raw));
+    return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
   }
 
-  function applyVolume(v) {
+  function applyDrag(clientX) {
+    const v = volumeFromX(clientX);
     tabVolumes[tabId] = v;
-    if (tabMuted[tabId] && v > 0) {
-      tabMuted[tabId] = false;
-      updateMuteBtn(tabId);
-    }
-    paintBar(v);
-    updateVolNumber(tabId, v);
+    if (tabMuted[tabId] && v > 0) tabMuted[tabId] = false;
+    applyVolumeUI(tabId);
     sendVolume(tabId, v);
   }
 
   let dragging = false;
-
-  track.addEventListener("mousedown", (e) => {
-    dragging = true;
-    applyVolume(volumeFromX(e.clientX));
-    e.preventDefault();
-  });
-
-  window.addEventListener("mousemove", (e) => {
-    if (dragging) applyVolume(volumeFromX(e.clientX));
-  });
-
+  track.addEventListener("mousedown", (e) => { dragging = true; applyDrag(e.clientX); e.preventDefault(); });
+  window.addEventListener("mousemove", (e) => { if (dragging) applyDrag(e.clientX); });
   window.addEventListener("mouseup", () => { dragging = false; });
 
-  // Store painter for later updates
-  track._paintBar = paintBar;
-  track._tabId = tabId;
-  container._barTrack = track;
-
-  paintBar(tabVolumes[tabId] ?? 1.0);
   return track;
 }
 
-// Update helpers 
-
-function updateVolNumber(tabId, volume) {
-  const el = document.querySelector(`[data-vol-num="${tabId}"]`);
-  if (el) el.textContent = formatVol(volume) + "%";
-}
-
-function updateMuteBtn(tabId) {
-  const btn = document.querySelector(`[data-mute-btn="${tabId}"]`);
-  const card = document.querySelector(`[data-tab-card="${tabId}"]`);
-  const muteTag = document.querySelector(`[data-mute-tag="${tabId}"]`);
-  if (!btn) return;
-
-  const muted = tabMuted[tabId];
-  btn.classList.toggle("is-muted", !!muted);
-  btn.title = muted ? "Unmute tab" : "Mute tab";
-  btn.textContent = muted ? "🔇" : "🔊";
-  if (muteTag) muteTag.style.display = muted ? "inline-block" : "none";
-
-  // repaint bar at effective volume
-  const barTrack = card?._barTrack;
-  if (barTrack?._paintBar) {
-    barTrack._paintBar(muted ? 0 : (tabVolumes[tabId] ?? 1.0));
-  }
-}
-
-//  rendering all tab
+// Render all tabs
 
 function renderTabs(tabs) {
   const list = document.getElementById("tabList");
   list.innerHTML = "";
 
   if (!tabs.length) {
-    list.innerHTML = `<div class="empty"><div class="empty-icon">🔈</div>No tabs found</div>`;
+    list.innerHTML = `<div class="empty">no tabs found</div>`;
     return;
   }
 
@@ -140,66 +109,79 @@ function renderTabs(tabs) {
     if (tab.audible) playingCount++;
 
     const vol = tabVolumes[tab.id] ?? 1.0;
+    const muted = tabMuted[tab.id] ?? false;
+    const domain = domainTag(tab.url || "");
 
     const card = document.createElement("div");
     card.className = "tab-card" +
       (tab.id === currentTabId ? " is-active-tab" : "") +
-      (tab.audible ? " is-playing" : "");
+      (muted ? " is-muted" : "");
     card.dataset.tabCard = tab.id;
 
-    // Tags row
-    const domain = domainTag(tab.url || "");
-    const tagsHtml = `
-      <div class="tab-tags">
-        <span class="tag">${domain}</span>
-        ${tab.audible ? `<span class="tag playing">● playing</span>` : ""}
-        <span class="tag muted" data-mute-tag="${tab.id}" style="display:none">◼ muted</span>
-        ${tab.id === currentTabId ? `<span class="tag">active</span>` : ""}
-      </div>`;
+    // favicon
+    const faviconHtml = tab.favIconUrl
+      ? `<img class="favicon" src="${tab.favIconUrl}" alt="" onerror="this.style.display='none'">`
+      : `<span style="font-size:10px;opacity:0.3">○</span>`;
 
-    // Favicon
-    const faviconUrl = tab.favIconUrl || "";
-    const faviconHtml = faviconUrl
-      ? `<img class="favicon" src="${faviconUrl}" alt="" onerror="this.style.display='none'">`
-      : `<span style="font-size:12px;opacity:0.4">🌐</span>`;
+    // playing badge
+    const playingBadge = tab.audible ? `<span class="tag-playing">▶</span>` : "";
 
-    // Title
-    const shortTitle = (tab.title || "Untitled").slice(0, 50);
-
-    card.innerHTML = `
-      ${tagsHtml}
-      <div class="tab-top">
-        <div class="tab-meta">
-          <div class="tab-title-row">
-            ${faviconHtml}
-            <div class="tab-title" title="${tab.title || ''}">${shortTitle}</div>
-          </div>
-        </div>
-        <div class="vol-display">
-          <div class="vol-number" data-vol-num="${tab.id}">${formatVol(vol)}%</div>
-        </div>
-      </div>
+    // top row
+    const topRow = document.createElement("div");
+    topRow.className = "tab-top";
+    topRow.innerHTML = `
+      ${faviconHtml}
+      <span class="tab-domain">${domain}</span>
+      <span class="tab-title" title="${tab.title || ''}">${(tab.title || "Untitled").slice(0, 55)}</span>
+      ${playingBadge}
+      <span class="vol-label" data-vol-label="${tab.id}">${fmt(muted ? 0 : vol)}</span>
+      <button class="mute-btn ${muted ? 'is-muted' : ''}" data-mute-btn="${tab.id}">${muted ? "🔇" : "🔊"}</button>
     `;
 
-    // Segmented bar
-    const bar = buildBar(tab.id, card);
-    card.appendChild(bar);
-
-    // muting button
-    const muteBtn = document.createElement("button");
-    muteBtn.className = "mute-btn";
-    muteBtn.dataset.muteBtn = tab.id;
-    muteBtn.textContent = tabMuted[tab.id] ? "🔇" : "🔊";
-    muteBtn.title = tabMuted[tab.id] ? "Unmute tab" : "Mute tab";
-    muteBtn.addEventListener("click", (e) => {
+    // mute btn logic
+    topRow.querySelector(`[data-mute-btn]`).addEventListener("click", (e) => {
       e.stopPropagation();
       tabMuted[tab.id] = !tabMuted[tab.id];
       const effectiveVol = tabMuted[tab.id] ? 0 : (tabVolumes[tab.id] ?? 1.0);
       sendVolume(tab.id, effectiveVol);
-      updateMuteBtn(tab.id);
+      applyVolumeUI(tab.id);
     });
-    bar.appendChild(muteBtn);
 
+    // controls row: − [bar] +
+    const controls = document.createElement("div");
+    controls.className = "tab-controls";
+
+    const minusBtn = document.createElement("button");
+    minusBtn.className = "vol-btn";
+    minusBtn.textContent = "−";
+    minusBtn.title = "Decrease volume";
+    minusBtn.addEventListener("click", () => adjustVolume(tab.id, -STEP));
+
+    // hold to repeat
+    let holdTimer;
+    minusBtn.addEventListener("mousedown", () => { holdTimer = setInterval(() => adjustVolume(tab.id, -STEP), 120); });
+    minusBtn.addEventListener("mouseup", () => clearInterval(holdTimer));
+    minusBtn.addEventListener("mouseleave", () => clearInterval(holdTimer));
+
+    const plusBtn = document.createElement("button");
+    plusBtn.className = "vol-btn";
+    plusBtn.textContent = "+";
+    plusBtn.title = "Increase volume";
+    plusBtn.addEventListener("click", () => adjustVolume(tab.id, STEP));
+
+    let holdTimerP;
+    plusBtn.addEventListener("mousedown", () => { holdTimerP = setInterval(() => adjustVolume(tab.id, STEP), 120); });
+    plusBtn.addEventListener("mouseup", () => clearInterval(holdTimerP));
+    plusBtn.addEventListener("mouseleave", () => clearInterval(holdTimerP));
+
+    const bar = buildBar(tab.id);
+
+    controls.appendChild(minusBtn);
+    controls.appendChild(bar);
+    controls.appendChild(plusBtn);
+
+    card.appendChild(topRow);
+    card.appendChild(controls);
     list.appendChild(card);
   });
 
@@ -214,18 +196,19 @@ function renderTabs(tabs) {
   }
 }
 
-// muting all
+// Mute All
 
 document.getElementById("muteAllBtn").addEventListener("click", () => {
   const allMuted = allTabs.every((t) => tabMuted[t.id]);
   allTabs.forEach((tab) => {
     tabMuted[tab.id] = !allMuted;
-    const v = tabMuted[tab.id] ? 0 : (tabVolumes[tab.id] ?? 1.0);
-    sendVolume(tab.id, v);
-    updateMuteBtn(tab.id);
+    sendVolume(tab.id, tabMuted[tab.id] ? 0 : (tabVolumes[tab.id] ?? 1.0));
+    applyVolumeUI(tab.id);
   });
   document.getElementById("muteAllBtn").textContent = allMuted ? "mute all" : "unmute all";
 });
+
+// Init
 
 async function init() {
   const [tabs, active] = await Promise.all([
@@ -235,12 +218,9 @@ async function init() {
 
   currentTabId = active[0]?.id ?? null;
 
-  // loading stored volume
   const resp = await browser.runtime.sendMessage({ type: "GET_VOLUMES" }).catch(() => ({ volumes: {} }));
   const stored = resp?.volumes ?? {};
-  tabs.forEach((t) => {
-    tabVolumes[t.id] = stored[t.id] ?? 1.0;
-  });
+  tabs.forEach((t) => { tabVolumes[t.id] = stored[t.id] ?? 1.0; });
 
   allTabs = tabs;
   renderTabs(tabs);

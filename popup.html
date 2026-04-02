@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>athine</title>
+  <title>Tab Volume</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap');
 
@@ -14,10 +14,9 @@
       --border: #2a2a2a;
       --text: #f0f0f0;
       --muted: #555;
-      --accent: #e8e8e8;
-      --bar-empty: #232323;
+      --bar-empty: #1e1e1e;
       --bar-fill: #d4d4d4;
-      --bar-active: #ffffff;
+      --bar-border: #3a3a3a;
       --tag-bg: #1e1e1e;
       --tag-border: #2f2f2f;
       --green: #7fff7a;
@@ -25,7 +24,7 @@
     }
 
     html, body {
-      width: 380px;
+      width: 360px;
       background: var(--bg);
       color: var(--text);
       font-family: 'DM Mono', monospace;
@@ -33,10 +32,10 @@
     }
 
     .shell {
-      padding: 14px 16px 18px;
+      padding: 10px 12px 12px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 7px;
     }
 
     /* ── Header ── */
@@ -44,87 +43,57 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding-bottom: 10px;
+      padding-bottom: 8px;
       border-bottom: 1px solid var(--border);
     }
 
-    .header-left {
-      display: flex;
-      align-items: baseline;
-      gap: 8px;
-    }
+    .header-left { display: flex; align-items: baseline; gap: 6px; }
 
     .logo {
       font-family: 'Syne', sans-serif;
       font-weight: 800;
-      font-size: 17px;
-      letter-spacing: -0.4px;
-      color: var(--text);
+      font-size: 14px;
+      letter-spacing: -0.3px;
     }
 
     .logo-sub {
-      font-size: 10px;
+      font-size: 9px;
       color: var(--muted);
       letter-spacing: 0.08em;
       text-transform: uppercase;
     }
 
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+    .header-right { display: flex; align-items: center; gap: 6px; }
 
     .mute-all-btn {
       background: var(--tag-bg);
       border: 1px solid var(--tag-border);
       color: var(--muted);
       font-family: 'DM Mono', monospace;
-      font-size: 10px;
+      font-size: 9px;
       letter-spacing: 0.06em;
-      padding: 4px 9px;
-      border-radius: 4px;
+      padding: 3px 7px;
+      border-radius: 3px;
       cursor: pointer;
-      transition: all 0.15s ease;
+      transition: all 0.15s;
       text-transform: uppercase;
     }
+    .mute-all-btn:hover { border-color: #444; color: var(--text); }
 
-    .mute-all-btn:hover {
-      border-color: #444;
-      color: var(--text);
-    }
+    .dots { display: flex; gap: 3px; align-items: center; }
+    .dots span { width: 3px; height: 3px; border-radius: 50%; background: var(--muted); }
 
-    .dots {
-      display: flex;
-      gap: 3px;
-      align-items: center;
-    }
-
-    .dots span {
-      width: 4px;
-      height: 4px;
-      border-radius: 50%;
-      background: var(--muted);
-    }
-
-    /* ── Summary bar ── */
-    .summary {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 11px;
-      color: var(--muted);
-    }
+    /* ── Summary ── */
+    .summary { display: flex; gap: 6px; }
 
     .summary-pill {
       background: var(--tag-bg);
       border: 1px solid var(--tag-border);
-      border-radius: 4px;
-      padding: 3px 8px;
-      font-size: 10px;
-      letter-spacing: 0.04em;
+      border-radius: 3px;
+      padding: 2px 7px;
+      font-size: 9px;
+      color: var(--muted);
     }
-
     .summary-pill.active { border-color: var(--green); color: var(--green); }
 
     /* ── Tab list ── */
@@ -132,7 +101,7 @@
       display: flex;
       flex-direction: column;
       gap: 2px;
-      max-height: 430px;
+      max-height: 480px;
       overflow-y: auto;
       scrollbar-width: thin;
       scrollbar-color: var(--border) transparent;
@@ -142,176 +111,159 @@
     .tab-card {
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px 12px 12px;
+      border-radius: 6px;
+      padding: 6px 9px 7px;
       transition: border-color 0.15s;
-      position: relative;
-      overflow: hidden;
     }
-
     .tab-card:hover { border-color: #383838; }
-    .tab-card.is-playing { border-color: #333; }
-    .tab-card.is-active-tab { border-left: 2px solid #555; }
+    .tab-card.is-active-tab { border-left: 2px solid #444; }
 
-    /* top row */
+    /* ── Top row: favicon + domain + title + vol% + mute ── */
     .tab-top {
       display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      margin-bottom: 8px;
-    }
-
-    .tab-meta {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      min-width: 0;
-      flex: 1;
-      padding-right: 8px;
-    }
-
-    .tab-tags {
-      display: flex;
-      gap: 4px;
-      flex-wrap: wrap;
-    }
-
-    .tag {
-      background: var(--tag-bg);
-      border: 1px solid var(--tag-border);
-      border-radius: 3px;
-      padding: 2px 6px;
-      font-size: 9px;
-      letter-spacing: 0.06em;
-      color: var(--muted);
-      text-transform: lowercase;
-      white-space: nowrap;
-    }
-
-    .tag.playing { border-color: var(--green); color: var(--green); }
-    .tag.muted   { border-color: var(--amber); color: var(--amber); }
-
-    .tab-title {
-      font-family: 'Syne', sans-serif;
-      font-weight: 700;
-      font-size: 13px;
-      color: var(--text);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      line-height: 1.2;
-    }
-
-    /* volume display */
-    .vol-display {
-      display: flex;
-      align-items: baseline;
-      gap: 6px;
-      flex-shrink: 0;
-    }
-
-    .vol-number {
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: 22px;
-      line-height: 1;
-      color: var(--text);
-      min-width: 44px;
-      text-align: right;
-    }
-
-    .vol-pct {
-      font-size: 10px;
-      color: var(--muted);
-    }
-
-    /* Segmented bar slider */
-    .bar-track {
-      position: relative;
-      height: 28px;
-      display: flex;
       align-items: center;
-      cursor: pointer;
-      user-select: none;
+      gap: 5px;
+      margin-bottom: 5px;
     }
 
-    .bar-segments {
-      display: flex;
-      gap: 2px;
-      width: 100%;
-      pointer-events: none;
-    }
-
-    .seg {
-      flex: 1;
-      height: 18px;
-      border-radius: 2px;
-      background: var(--bar-empty);
-      transition: background 0.08s, height 0.08s;
-    }
-
-    .seg.filled { background: var(--bar-fill); }
-    .seg.peak   { background: var(--bar-active); height: 22px; }
-
-    .bar-track:hover .seg.filled { background: #bebebe; }
-    .bar-track:hover .seg.peak   { background: #ffffff; }
-
-    /* Mute toggle */
-    .mute-btn {
-      position: absolute;
-      right: 0;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 4px;
-      color: var(--muted);
-      font-size: 13px;
-      transition: color 0.15s;
-      display: none;
-    }
-
-    .tab-card:hover .mute-btn { display: block; }
-    .mute-btn:hover { color: var(--amber); }
-    .mute-btn.is-muted { display: block; color: var(--amber); }
-
-    /* Empty state */
-    .empty {
-      text-align: center;
-      color: var(--muted);
-      font-size: 11px;
-      padding: 32px 0;
-      letter-spacing: 0.06em;
-    }
-
-    .empty-icon { font-size: 28px; margin-bottom: 8px; opacity: 0.4; }
-
-    /* Loading */
-    .loading {
-      text-align: center;
-      color: var(--muted);
-      font-size: 10px;
-      padding: 20px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-    }
-
-    /* Favicon */
     .favicon {
-      width: 14px;
-      height: 14px;
+      width: 11px;
+      height: 11px;
       border-radius: 2px;
       object-fit: contain;
       flex-shrink: 0;
       opacity: 0.7;
     }
 
-    .tab-title-row {
+    .tab-domain {
+      font-size: 8px;
+      color: var(--muted);
+      background: var(--tag-bg);
+      border: 1px solid var(--tag-border);
+      border-radius: 2px;
+      padding: 1px 4px;
+      flex-shrink: 0;
+      letter-spacing: 0.03em;
+    }
+
+    .tab-title {
+      font-size: 10px;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .tag-playing {
+      font-size: 8px;
+      color: var(--green);
+      border: 1px solid var(--green);
+      border-radius: 2px;
+      padding: 1px 4px;
+      flex-shrink: 0;
+    }
+
+    .vol-label {
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--text);
+      flex-shrink: 0;
+      min-width: 30px;
+      text-align: right;
+    }
+
+    .mute-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 10px;
+      color: var(--muted);
+      padding: 0 1px;
+      flex-shrink: 0;
+      transition: color 0.15s;
+      line-height: 1;
+    }
+    .mute-btn:hover { color: var(--amber); }
+    .mute-btn.is-muted { color: var(--amber); }
+
+    /* ── Bottom row: − bar + ── */
+    .tab-controls {
       display: flex;
       align-items: center;
       gap: 5px;
-      min-width: 0;
+    }
+
+    .vol-btn {
+      width: 17px;
+      height: 17px;
+      border-radius: 3px;
+      border: 1px solid var(--border);
+      background: var(--tag-bg);
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.12s;
+      user-select: none;
+    }
+    .vol-btn:hover { border-color: #555; color: var(--text); background: #222; }
+    .vol-btn:active { transform: scale(0.9); }
+
+    /* ── Smooth solid progress bar (like the screenshot) ── */
+    .bar-track {
+      flex: 1;
+      height: 13px;
+      background: var(--bar-empty);
+      border: 1px solid var(--bar-border);
+      border-radius: 3px;
+      position: relative;
+      cursor: pointer;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: var(--bar-fill);
+      border-radius: 2px 0 0 2px;
+      pointer-events: none;
+      position: relative;
+      transition: width 0.07s ease;
+    }
+
+    /* shine on top */
+    .bar-fill::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 35%;
+      background: rgba(255,255,255,0.1);
+    }
+
+    .bar-track:hover .bar-fill { background: #eaeaea; }
+    .tab-card.is-muted .bar-fill { background: #3a3a3a; }
+    .tab-card.is-muted .vol-label { color: var(--amber); }
+
+    /* ── Empty / loading ── */
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      font-size: 10px;
+      padding: 28px 0;
+    }
+    .loading {
+      text-align: center;
+      color: var(--muted);
+      font-size: 9px;
+      padding: 18px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
     }
   </style>
 </head>
@@ -325,13 +277,11 @@
     </div>
     <div class="header-right">
       <button class="mute-all-btn" id="muteAllBtn">mute all</button>
-      <div class="dots">
-        <span></span><span></span><span></span>
-      </div>
+      <div class="dots"><span></span><span></span><span></span></div>
     </div>
   </div>
 
-  <div class="summary" id="summary">
+  <div class="summary">
     <div class="summary-pill" id="tabCountPill">— tabs</div>
     <div class="summary-pill active" id="playingPill" style="display:none">● playing</div>
   </div>
@@ -341,7 +291,6 @@
   </div>
 
 </div>
-
 <script src="popup.js"></script>
 </body>
 </html>

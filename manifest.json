@@ -1,8 +1,8 @@
 {
   "manifest_version": 2,
-  "name": "Tab Volume",
+  "name": "athine",
   "version": "1.0.0",
-  "description": "Control the volume of each tab independently.",
+  "description": "Control the volume.",
   "permissions": [
     "tabs",
     "activeTab",
@@ -10,7 +10,7 @@
   ],
   "browser_action": {
     "default_popup": "popup.html",
-    "default_title": "Tab Volume"
+    "default_title": "athine"
   },
   "content_scripts": [
     {
