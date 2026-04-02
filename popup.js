@@ -208,7 +208,7 @@ document.getElementById("muteAllBtn").addEventListener("click", () => {
   document.getElementById("muteAllBtn").textContent = allMuted ? "mute all" : "unmute all";
 });
 
-// Init
+// ── Init
 
 async function init() {
   const [tabs, active] = await Promise.all([
@@ -227,3 +227,8 @@ async function init() {
 }
 
 init();
+
+// Prevent pinch-to-zoom and ctrl+scroll zoom
+window.addEventListener("wheel", (e) => { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
+window.addEventListener("gesturestart", (e) => e.preventDefault());
+window.addEventListener("gesturechange", (e) => e.preventDefault());
