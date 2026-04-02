@@ -24,7 +24,7 @@
     "persistent": false
   },
   "icons": {
-    "48": "icons/icon48.svg",
-    "96": "icons/icon96.svg"
+    "48": "icons/icon48.png",
+    "96": "icons/icon96.png"
   }
 }
