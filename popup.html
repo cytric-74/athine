@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Tab Volume</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0d0d;
+      --card: #141414;
+      --border: #2a2a2a;
+      --text: #f0f0f0;
+      --muted: #555;
+      --accent: #e8e8e8;
+      --bar-empty: #232323;
+      --bar-fill: #d4d4d4;
+      --bar-active: #ffffff;
+      --tag-bg: #1e1e1e;
+      --tag-border: #2f2f2f;
+      --green: #7fff7a;
+      --amber: #ffcc44;
+    }
+
+    html, body {
+      width: 380px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      overflow: hidden;
+    }
+
+    .shell {
+      padding: 14px 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 17px;
+      letter-spacing: -0.4px;
+      color: var(--text);
+    }
+
+    .logo-sub {
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .mute-all-btn {
+      background: var(--tag-bg);
+      border: 1px solid var(--tag-border);
+      color: var(--muted);
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      padding: 4px 9px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-transform: uppercase;
+    }
+
+    .mute-all-btn:hover {
+      border-color: #444;
+      color: var(--text);
+    }
+
+    .dots {
+      display: flex;
+      gap: 3px;
+      align-items: center;
+    }
+
+    .dots span {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--muted);
+    }
+
+    /* ── Summary bar ── */
+    .summary {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .summary-pill {
+      background: var(--tag-bg);
+      border: 1px solid var(--tag-border);
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-size: 10px;
+      letter-spacing: 0.04em;
+    }
+
+    .summary-pill.active { border-color: var(--green); color: var(--green); }
+
+    /* ── Tab list ── */
+    .tab-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      max-height: 430px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    /* ── Tab card ── */
+    .tab-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px 12px;
+      transition: border-color 0.15s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tab-card:hover { border-color: #383838; }
+    .tab-card.is-playing { border-color: #333; }
+    .tab-card.is-active-tab { border-left: 2px solid #555; }
+
+    /* top row */
+    .tab-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .tab-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+      flex: 1;
+      padding-right: 8px;
+    }
+
+    .tab-tags {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      background: var(--tag-bg);
+      border: 1px solid var(--tag-border);
+      border-radius: 3px;
+      padding: 2px 6px;
+      font-size: 9px;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      text-transform: lowercase;
+      white-space: nowrap;
+    }
+
+    .tag.playing { border-color: var(--green); color: var(--green); }
+    .tag.muted   { border-color: var(--amber); color: var(--amber); }
+
+    .tab-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.2;
+    }
+
+    /* volume display */
+    .vol-display {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .vol-number {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 22px;
+      line-height: 1;
+      color: var(--text);
+      min-width: 44px;
+      text-align: right;
+    }
+
+    .vol-pct {
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    /* Segmented bar slider */
+    .bar-track {
+      position: relative;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .bar-segments {
+      display: flex;
+      gap: 2px;
+      width: 100%;
+      pointer-events: none;
+    }
+
+    .seg {
+      flex: 1;
+      height: 18px;
+      border-radius: 2px;
+      background: var(--bar-empty);
+      transition: background 0.08s, height 0.08s;
+    }
+
+    .seg.filled { background: var(--bar-fill); }
+    .seg.peak   { background: var(--bar-active); height: 22px; }
+
+    .bar-track:hover .seg.filled { background: #bebebe; }
+    .bar-track:hover .seg.peak   { background: #ffffff; }
+
+    /* Mute toggle */
+    .mute-btn {
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      color: var(--muted);
+      font-size: 13px;
+      transition: color 0.15s;
+      display: none;
+    }
+
+    .tab-card:hover .mute-btn { display: block; }
+    .mute-btn:hover { color: var(--amber); }
+    .mute-btn.is-muted { display: block; color: var(--amber); }
+
+    /* Empty state */
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      font-size: 11px;
+      padding: 32px 0;
+      letter-spacing: 0.06em;
+    }
+
+    .empty-icon { font-size: 28px; margin-bottom: 8px; opacity: 0.4; }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      color: var(--muted);
+      font-size: 10px;
+      padding: 20px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    /* Favicon */
+    .favicon {
+      width: 14px;
+      height: 14px;
+      border-radius: 2px;
+      object-fit: contain;
+      flex-shrink: 0;
+      opacity: 0.7;
+    }
+
+    .tab-title-row {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      min-width: 0;
+    }
+  </style>
+</head>
+<body>
+<div class="shell">
+
+  <div class="header">
+    <div class="header-left">
+      <span class="logo">Vol</span>
+      <span class="logo-sub">per tab</span>
+    </div>
+    <div class="header-right">
+      <button class="mute-all-btn" id="muteAllBtn">mute all</button>
+      <div class="dots">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="summary" id="summary">
+    <div class="summary-pill" id="tabCountPill">— tabs</div>
+    <div class="summary-pill active" id="playingPill" style="display:none">● playing</div>
+  </div>
+
+  <div class="tab-list" id="tabList">
+    <div class="loading">scanning tabs…</div>
+  </div>
+
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>
