@@ -3,7 +3,7 @@
 <br />
 
 <!-- Replace with your own gif -->
-![athine demo](demo/firefox demo.gif)
+![athine demo](demo/firefox%20demo.gif)
 
 <br />
 
