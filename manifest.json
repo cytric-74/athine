@@ -37,5 +37,15 @@
   "icons": {
     "48": "icons/icon48.png",
     "96": "icons/icon96.png"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "athine@cytric-74",
+      "strict_min_version": "57.0",
+      "data_collection_permissions": {
+        "required": [],
+        "optional": []
+      }
+    }
   }
 }

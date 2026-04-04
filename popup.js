@@ -15,7 +15,7 @@ function domainTag(url) {
 function fmt(v) { return Math.round(v * 100) + "%"; }
 
 function sendVolume(tabId, volume) {
-  browser.runtime.sendMessage({ type: "SET_VOLUME", tabId, volume }).catch(() => {});
+  browser.runtime.sendMessage({ type: "SET_VOLUME", tabId, volume }).catch(() => { });
 }
 
 // Per-tab DOM updates 
@@ -99,7 +99,10 @@ function renderTabs(tabs) {
   list.innerHTML = "";
 
   if (!tabs.length) {
-    list.innerHTML = `<div class="empty">no tabs found</div>`;
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.textContent = "no tabs found";
+    list.appendChild(empty);
     return;
   }
 
@@ -118,28 +121,62 @@ function renderTabs(tabs) {
       (muted ? " is-muted" : "");
     card.dataset.tabCard = tab.id;
 
-    // favicon
-    const faviconHtml = tab.favIconUrl
-      ? `<img class="favicon" src="${tab.favIconUrl}" alt="" onerror="this.style.display='none'">`
-      : `<span style="font-size:10px;opacity:0.3">○</span>`;
-
-    // playing badge
-    const playingBadge = tab.audible ? `<span class="tag-playing">▶</span>` : "";
-
     // top row
     const topRow = document.createElement("div");
     topRow.className = "tab-top";
-    topRow.innerHTML = `
-      ${faviconHtml}
-      <span class="tab-domain">${domain}</span>
-      <span class="tab-title" title="${tab.title || ''}">${(tab.title || "Untitled").slice(0, 55)}</span>
-      ${playingBadge}
-      <span class="vol-label" data-vol-label="${tab.id}">${fmt(muted ? 0 : vol)}</span>
-      <button class="mute-btn ${muted ? 'is-muted' : ''}" data-mute-btn="${tab.id}">${muted ? "🔇" : "🔊"}</button>
-    `;
+
+    // favicon
+    if (tab.favIconUrl) {
+      const img = document.createElement("img");
+      img.className = "favicon";
+      img.src = tab.favIconUrl;
+      img.alt = "";
+      img.onerror = function () { this.style.display = "none"; };
+      topRow.appendChild(img);
+    } else {
+      const fallback = document.createElement("span");
+      fallback.style.cssText = "font-size:10px;opacity:0.3";
+      fallback.textContent = "○";
+      topRow.appendChild(fallback);
+    }
+
+    // domain
+    const domainEl = document.createElement("span");
+    domainEl.className = "tab-domain";
+    domainEl.textContent = domain;
+    topRow.appendChild(domainEl);
+
+    // title
+    const titleEl = document.createElement("span");
+    titleEl.className = "tab-title";
+    titleEl.title = tab.title || "";
+    titleEl.textContent = (tab.title || "Untitled").slice(0, 55);
+    topRow.appendChild(titleEl);
+
+    // playing badge
+    if (tab.audible) {
+      const badge = document.createElement("span");
+      badge.className = "tag-playing";
+      badge.textContent = "▶";
+      topRow.appendChild(badge);
+    }
+
+    // vol label
+    const volLabel = document.createElement("span");
+    volLabel.className = "vol-label";
+    volLabel.dataset.volLabel = tab.id;
+    volLabel.textContent = fmt(muted ? 0 : vol);
+    topRow.appendChild(volLabel);
+
+    // mute button
+    const muteBtn = document.createElement("button");
+    muteBtn.className = "mute-btn" + (muted ? " is-muted" : "");
+    muteBtn.dataset.muteBtn = tab.id;
+    muteBtn.textContent = muted ? "🔇" : "🔊";
+    topRow.appendChild(muteBtn);
 
     // mute btn logic
-    topRow.querySelector(`[data-mute-btn]`).addEventListener("click", (e) => {
+    muteBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       tabMuted[tab.id] = !tabMuted[tab.id];
       const effectiveVol = tabMuted[tab.id] ? 0 : (tabVolumes[tab.id] ?? 1.0);
@@ -157,7 +194,6 @@ function renderTabs(tabs) {
     minusBtn.title = "Decrease volume";
     minusBtn.addEventListener("click", () => adjustVolume(tab.id, -STEP));
 
-    // hold to repeat
     let holdTimer;
     minusBtn.addEventListener("mousedown", () => { holdTimer = setInterval(() => adjustVolume(tab.id, -STEP), 120); });
     minusBtn.addEventListener("mouseup", () => clearInterval(holdTimer));
@@ -208,7 +244,7 @@ document.getElementById("muteAllBtn").addEventListener("click", () => {
   document.getElementById("muteAllBtn").textContent = allMuted ? "mute all" : "unmute all";
 });
 
-// ── Init
+// Init
 
 async function init() {
   const [tabs, active] = await Promise.all([
