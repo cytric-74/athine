@@ -1,7 +1,7 @@
 <div align="center">
 
 <br />
-<img src="demo/firefox-demo.gif" width="600" />
+<img src="demo/firefox-demo.gif"/>
 <br />
 
 # athine
