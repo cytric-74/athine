@@ -14,7 +14,7 @@ For chromium users [here](https://github.com/cytric-74/athine-chromium)
 *no data is collected*
 
 <div align="center">
-  <img src="demo/Screenshot.png" width="600" />
+  <img src="demo/Screenshot.png"/>
 </div>
 
 ## Installation
