@@ -43,7 +43,9 @@
       "id": "athine@cytric-74",
       "strict_min_version": "57.0",
       "data_collection_permissions": {
-        "required": [],
+        "required": [
+          "none"
+        ],
         "optional": []
       }
     }
