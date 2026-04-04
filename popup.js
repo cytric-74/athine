@@ -48,7 +48,7 @@ function applyVolumeUI(tabId) {
   }
 }
 
-// Adjust volume by delta 
+// adjusting volume by delta 
 
 function adjustVolume(tabId, delta) {
   const current = tabVolumes[tabId] ?? 1.0;
@@ -59,7 +59,7 @@ function adjustVolume(tabId, delta) {
   sendVolume(tabId, next);
 }
 
-// Build smooth progress bar 
+// smooth progress bar 
 
 function buildBar(tabId) {
   const track = document.createElement("div");
@@ -96,7 +96,8 @@ function buildBar(tabId) {
 
 function renderTabs(tabs) {
   const list = document.getElementById("tabList");
-  list.innerHTML = "";
+
+  while (list.firstChild) list.removeChild(list.firstChild);
 
   if (!tabs.length) {
     const empty = document.createElement("div");
@@ -221,7 +222,7 @@ function renderTabs(tabs) {
     list.appendChild(card);
   });
 
-  // Summary
+  // summary
   document.getElementById("tabCountPill").textContent = `${tabs.length} tab${tabs.length !== 1 ? "s" : ""}`;
   const playingPill = document.getElementById("playingPill");
   if (playingCount > 0) {
@@ -232,7 +233,7 @@ function renderTabs(tabs) {
   }
 }
 
-// Mute All
+// mute All
 
 document.getElementById("muteAllBtn").addEventListener("click", () => {
   const allMuted = allTabs.every((t) => tabMuted[t.id]);
@@ -264,7 +265,7 @@ async function init() {
 
 init();
 
-// Prevent pinch-to-zoom and ctrl+scroll zoom
+// preventing pinch-to-zoom and ctrl+scroll zoom
 window.addEventListener("wheel", (e) => { if (e.ctrlKey) e.preventDefault(); }, { passive: false });
 window.addEventListener("gesturestart", (e) => e.preventDefault());
 window.addEventListener("gesturechange", (e) => e.preventDefault());
