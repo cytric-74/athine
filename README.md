@@ -9,12 +9,13 @@
 </div>
 
 ## Overview
+For controlling the audio volume of each browser tab independently.
+For chromium users [here](https://github.com/cytric-74/athine-chromium)
+*no data is collected*
 
-For controling the audio volume of each browser tab independently.
-For chromium users ![here](https://github.com/cytric-74/athine-chromium)
-
-*no datas are collected*
-<div align="centre"> ![](demo/Screenshot.png) </div>
+<div align="center">
+  <img src="demo/Screenshot.png" width="600" />
+</div>
 
 ## Installation
 
