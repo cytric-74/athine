@@ -1,10 +1,7 @@
 <div align="center">
 
 <br />
-
-<!-- Replace with your own gif -->
-![athine demo](demo/firefox%20demo.gif)
-
+<img src="demo/firefox-demo.gif" width="600" />
 <br />
 
 # athine
