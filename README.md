@@ -11,6 +11,8 @@
 ## Overview
 For controlling the audio volume of each browser tab independently.
 For chromium users [here](https://github.com/cytric-74/athine-chromium)
+
+
 *no data is collected*
 
 <div align="center">
