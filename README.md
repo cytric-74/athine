@@ -21,20 +21,9 @@ For chromium users [here](https://github.com/cytric-74/athine-chromium)
 
 ## Installation
 
-### From source
+available on [firefox addons](https://addons.mozilla.org/en-US/firefox/addon/athine/)
 
-```bash
-git clone https://github.com/cytric-74/athine.git
-cd athine
-```
-or you can download the folder - <div align="left">![preview](demo/download%20zip.png)</div>
-
-1. Open Firefox and navigate to `about:debugging`
-2. Click **This Firefox** in the left sidebar
-3. Click **Load Temporary Add-on…**
-4. Open the `athine-firefox` folder and select `manifest.json`
-
----
+For chrome/edge/opera/brave [here](https://github.com/cytric-74/athine-chromium)
 
 <div align="center">
 <sub>built by <a href="https://github.com/cytric-74">cytric-74</a></sub>
